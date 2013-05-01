@@ -14,8 +14,8 @@ require 'uri'
 
 puts "Usage: filename urls.txt" if ARGV[0].nil?
 
-filename 	= ARGV[0]
-urls 			= File.open(ARGV[1])
+filename  = ARGV[0]
+urls      = File.open(ARGV[1])
 
 urls.each do |url|
   url = URI(url).merge(filename)
