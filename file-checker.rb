@@ -21,11 +21,11 @@ urls.each do |url|
   url = URI(url).merge(filename)
 
   response = Typhoeus.get(	url.to_s,
-  													:ssl_verifyhost => 0,
-  													:ssl_verifypeer => false,
-  													:followlocation => true,
-  													:headers => {'User-Agent' => 'Mozilla'},
-  													:timeout => 1000 )
+                            :ssl_verifyhost => 0,
+                            :ssl_verifypeer => false,
+                            :followlocation => true,
+                            :headers => {'User-Agent' => 'Mozilla'},
+                            :timeout => 1000 )
 
   puts "#{url} #{response.code}"
 end
