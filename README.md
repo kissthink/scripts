@@ -1,4 +1,4 @@
-scripts
+Scripts
 =======
 
 Small snippets of code we often find useful.
