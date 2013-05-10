@@ -9,12 +9,13 @@
 
 puts "Usage: filename urls.txt" if ARGV[0].nil?
 
-domains = File.open(ARGV[0]) 
+domains = File.open(ARGV[0])
 
 domains.each do |domain|
-  domain = domain.chop
+  domain.chop!
   ping = `ping -c 1 #{domain}`
-  ip = ping.match(/\((.+)\):/)[1]
+  ip   = ping[/\((.+)\):/, 1]
+
   puts "#{domain} #{ip}"
 end
 
