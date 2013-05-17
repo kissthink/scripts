@@ -7,16 +7,16 @@
 # By: Ryan Dewhurst (RandomStorm)
 #
 
-puts "Usage: filename urls.txt" if ARGV[0].nil?
+if file = ARGV[0]
+  domains = File.open(file)
 
-domains = File.open(ARGV[0])
+  domains.each do |domain|
+    domain.chop!
+    ping = `ping -c 1 #{domain}`
+    ip   = ping[/\((.+)\):/, 1]
 
-domains.each do |domain|
-  domain.chop!
-  ping = `ping -c 1 #{domain}`
-  ip   = ping[/\((.+)\):/, 1]
-
-  puts "#{domain} #{ip}"
+    puts "#{domain} #{ip}"
+  end
+else
+  puts "Usage: ./domain_to_ip.rb urls.txt"
 end
-
-exit
