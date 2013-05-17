@@ -12,7 +12,7 @@ require 'nokogiri'
 
 if address = ARGV[0]
   api_url  = 'http://www.ipneighbour.com/'
-  response = Typhoeus.post(api_url, body: { 'domainName' => address })
+  response = Typhoeus.post(api_url, :body => { 'domainName' => address })
   doc      = Nokogiri::HTML(response.body)
 
   doc.search('div#resultsContainer ul li a').each do |node|
