@@ -97,5 +97,10 @@ echo ""
 echo "$green Meta Data Stage Complete!$normal"
 echo ""
 
+## Run the WhoIs
+whois $domain > ~/Desktop/$domain/whois.txt
+echo "$yellow Running WhoIs..$normal"
+echo ""
+echo "$green WhoIs output saved to: ~/Desktop/$domain/whois.txt$normal"
 
 fi
