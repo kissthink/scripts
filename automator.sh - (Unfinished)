@@ -1,13 +1,24 @@
 #!/bin/bash
-#Colours
-#Black       0;30     Dark Gray     1;30
-#Blue        0;34     Light Blue    1;34
-#Green       0;32     Light Green   1;32
-#Cyan        0;36     Light Cyan    1;36
-#Red         0;31     Light Red     1;31
-#Purple      0;35     Light Purple  1;35
-#Brown       0;33     Yellow        1;33
-#Light Gray  0;37     White         1;37
+
+#Automatically run recon against a domain/list of domains.
+#Built for Backtrack
+#
+# Current Features: 
+# * DNS Recon
+# * Email Harvesting
+# * Meta Data Enumeration
+# * WhoIs
+#
+# Additional Features
+# * Pull domains from SSL Certificate
+#
+# Usage: ./automator.sh listofdomains.txt
+# Usage: ./automator.sh domain.com
+#
+# By: Leon Teale (RandomStorm)
+#
+
+## Setting Coloured variables
 red=`echo -e "\033[31m"`
 lcyan=`echo -e "\033[36m"`
 yellow=`echo -e "\033[33m"`
@@ -15,9 +26,18 @@ green=`echo -e "\033[32m"`
 blue=`echo -e "\033[34m"`
 purple=`echo -e "\033[35m"`
 normal=`echo -e "\033[m"`
+ 
+## Check for correct usage
+if [ -z "$1" ];
+then
+echo ""
+echo "Usage: ./automator.sh listofdomains.txt"
+echo "Usage: ./automator.sh domain.com"
+echo ""
 
-while :
- do
+## Run script on correct usage
+else
+domain=$1
 clear
 echo "$yellow                _                        _             "
 echo "$yellow     /\        | |                      | |            "
@@ -25,135 +45,86 @@ echo "$yellow    /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  _ __ "
 echo "$yellow   / /\ \| | | | __/ _ \| '_ \` _ \ / _\` | __/ _ \| '__|"
 echo "$yellow  / ____ \ |_| | || (_) | | | | | | (_| | || (_) | | "  
 echo "$yellow /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___/|_|$normal"
-echo "$lcyan  -- Created by Leon Teale"
-echo ""
-echo "$purple Please Enter The Target Domain$normal";
-read target
-echo ""
-    mkdir -p ~/Desktop/$target
-echo "$blue +-------------------------------------------+"
-echo "$blue |                                           |"
-echo "$blue | $yellow 1. Recon$normal                              $blue   |$normal"
-echo "$blue | $yellow 2. Brute Force$normal                        $blue   |$normal"
-echo "$blue | $yellow 3. Web App Test  $normal                      $blue  |"
-echo "$blue | $yellow 4. OWA Attacks                 $normal         $blue |"
-#echo "$blue | 4. $yellow OS FingerPrinting$normal      |"
-#echo "$blue | 5. $yellow Password bruteforcing$normal  |"
-#echo "$blue | 6. $yellow Metagoofil$normal             |"
-echo "$blue |                                           |"
-echo "$blue +-------------------------------------------+"
-echo ""
-read opt
-case $opt in
-
-1)clear 
-echo "$yellow                _                        _             "
-echo "$yellow     /\        | |                      | |            "
-echo "$yellow    /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  _ __ "
-echo "$yellow   / /\ \| | | | __/ _ \| '_ \` _ \ / _\` | __/ _ \| '__|"
-echo "$yellow  / ____ \ |_| | || (_) | | | | | | (_| | || (_) | | "  
-echo "$yellow /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___/|_|$normal"
-echo "$lcyan  -- Created by Leon Teale"
+echo "$lcyan  -- by Leon Teale (Randomstorm)"
 echo ""
 echo "$blue +-------------------------------------------+"
+echo "$blue | $red Current Features$normal                      $blue   |$normal"
+echo "$blue | $yellow * DNS Recon$normal                           $blue   |$normal"
+echo "$blue | $yellow * Email Harvesting$normal                     $blue  |$normal"
+echo "$blue | $yellow * Meta DataEnumeration$normal                 $blue  |$normal"
+echo "$blue | $yellow * WhoIs$normal                                  $blue|$normal"
 echo "$blue |                                           |"
-echo "$blue | $green Running Recon..  $normal                     $blue   |$normal"
-echo "$blue | $yellow Once the script finishes running the$normal$blue     |$normal"
-echo "$blue | $yellow results will be saved to the Desktop$normal$blue     |"
-#echo "$blue | 5. $yellow Password bruteforcing$normal  |"
-#echo "$blue | 6. $yellow Metagoofil$normal             |"
-echo "$blue |                                           |"
-echo "$blue +-------------------------------------------+"
+echo "$blue | $red Additional Features            $normal         $blue |$normal"
+echo "$blue | $yellow * Pull domains From SSL Cert$normal$blue             |$normal"
+echo "$blue +-------------------------------------------+$normal"
 echo ""
-echo "[->                  ]0%"
+mkdir -p ~/Desktop/$domain
+mkdir -p ~/Desktop/$domain/metagoofil
+sleep 1
 
-#DNS Enumeration
-/pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $target > /tmp/$target.dnsrecon.txt.tmp
-cat /tmp/$target.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "    " $4'} | sort -u  > ~/Desktop/$target/dnsrecon.txt
-echo "" >> ~/Desktop/$target/dnsrecon.txt
-rm -rf /tmp/$target.dnsrecon.txt.tmp
-echo "[--->                ]25%"
+## Main Features: ##
 
-#Email Harvester
-/pentest/enumeration/theharvester/theHarvester.py -l 500 -b all -d $target > /tmp/$target.emails.txt.tmp
-cat /tmp/$target.emails.txt.tmp |  grep @ | grep -vE 'cmartore' > ~/Desktop/$target/emails.txt
-rm -rf /tmp/$target.emails.txt.tmp
-echo "[--------->          ]50%"
-
-#MetaGooFil to get usernames from stored online documents
-echo "---- MetaGooFill Users ----" > ~/Desktop/$target/users.txt
-mkdir -p ~/Desktop/$target/metagoofil.tmp/
-/pentest/enumeration/google/metagoofil/metagoofil.py -d $target  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$target/metagoofil.tmp/ -f ~/Desktop/$target/users.html
-cat ~/Desktop/$target/users.html | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" >> ~/Desktop/$target/users.txt
-echo "" >> ~/Desktop/$target/users.txt
-rm -rf ~/Desktop/$target/metagoofil.tmp/
-#rm -rf /tmp/$target/users.txt.tmp
-echo "[--------------->    ]75%"
-
-#Format obtained emails to possible usernames and add to end of users list if found by MetaGooFil
-echo "---- Users formatted from emails addresses found ----" >> ~/Desktop/$target/users.txt
-cat ~/Desktop/$target/emails.txt | cut -f1 -d"@" >> ~/Desktop/$target/users.txt 
-echo "[----------------->  ]88%"
-
-#Get the Name Servers
-echo "---- Name Servers ----" >> ~/Desktop/$target/dnsrecon.txt
-dig ns $target | grep -v '^;' | grep $target | awk {'print $5'} >> ~/Desktop/$target/dnsrecon.txt
-echo "" >> ~/Desktop/$target/dnsrecon.txt
-
-#Get Mx records
-echo "---- MX Records ----" >> ~/Desktop/$target/dnsrecon.txt
-dig mx $target | grep -v '^;' | grep $target | awk {'print $6'} >> ~/Desktop/$target/dnsrecon.txt
-
-#Get Whois info
-whois $target > ~/Desktop/$target/whois.txt
-echo "[------------------->]100%"
-
-read enterkey;;
-
-2)
-
-
-read enterkey;;
-
-3)clear
-echo "$yellow                _                        _             "
-echo "$yellow     /\        | |                      | |            "
-echo "$yellow    /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  _ __ "
-echo "$yellow   / /\ \| | | | __/ _ \| '_ \` _ \ / _\` | __/ _ \| '__|"
-echo "$yellow  / ____ \ |_| | || (_) | | | | | | (_| | || (_) | | "  
-echo "$yellow /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___/|_|$normal"
-echo "$lcyan  -- Created by Leon Teale"
+## Run the DNS Stage
+echo "$yellow Running DNS Recon Stage..$normal (will currently hang if domain(s) have wildcard DNS configured)"
 echo ""
-echo "$blue +-------------------------------------------+"
-echo "$blue |                                           |"
-echo "$blue | $yellow 1. WPScan -Wordpress Vuln scanner $blue       |$normal"
-#echo "$blue | $yellow 2. Brute Force$normal                        $blue   |$normal"
-#echo "$blue | $yellow 3. Web App Test  $normal                      $blue  |"
-#echo "$blue | $yellow 4. OWA Attacks                 $normal         $blue |"
-#echo "$blue | 4. $yellow OS FingerPrinting$normal      |"
-#echo "$blue | 5. $yellow Password bruteforcing$normal  |"
-#echo "$blue | 6. $yellow Metagoofil$normal             |"
-echo "$blue |                                           |"
-echo "$blue +-------------------------------------------+"
+/pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
+echo "" >> ~/Desktop/$domain/dnsrecon.txt
+rm -rf /tmp/$domain.dnsrecon.txt.tmp
+echo "" >> ~/Desktop/$domain/dnsrecon.txt
+echo "Name Servers" >> ~/Desktop/$domain/dnsrecon.txt
+dig ns $domain | grep -v '^;' | grep A | awk {'print $1 "\t" $5'} >> ~/Desktop/$domain/dnsrecon.txt
+echo "" >> ~/Desktop/$domain/dnsrecon.txt
+echo "MX Records" >> ~/Desktop/$domain/dnsrecon.txt
+dig mx $domain | grep -v '^;' | grep $domain | awk {'print $6'} >> ~/Desktop/$domain/dnsrecon.txt
+cat ~/Desktop/$domain/dnsrecon.txt
 echo ""
-read opt
-case $opt in
+echo "$green DNS Recon Stage Complete!$normal"
+echo ""
 
-1) echo "Running WPScan now..."
-/pentest/web/wpscan/wpscan.rb --url $target > ~/Desktop/$target/wpscan.txt
-cat ~/Desktop/$target/wpscan.txt
-echo " "
-echo "$blue Scan Finished.$normal"
-read enterkeyy;;
+## Run the Mail Harvesting Stage
+echo "+------------------------------------------------+"
+echo "$yellow Running Email Harvesting Stage..$normal"
+echo ""
+/pentest/enumeration/theharvester/theHarvester.py -l 500 -b all -d $domain > /tmp/$domain.emails.txt.tmp
+cat /tmp/$domain.emails.txt.tmp |  grep @ | grep -vE 'cmartore' > ~/Desktop/$domain/emails.txt
+rm -rf /tmp/$domain.emails.txt.tmp
+echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $normal)" 
+cat ~/Desktop/$domain/emails.txt | column -c 100
+echo ""
+echo "$green Email Harvesting Stage Complete!$normal"
+echo ""
 
-*) echo "$red Please Enter A Valid Option$normal"
-read enterkey;;
- 
-esac;
-read enterkey;;
+## Run the MetaGooFil Stage
+echo "+------------------------------------------------+"
+echo "$yellow Running Meta Data Gathering Stage..$normal"
+echo ""
+/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$domain/metagoofil -f ~/Desktop/$domain/users.html > ~/Desktop/$domain/users_temp.html
+cat ~/Desktop/$domain/users_temp.html | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
+cat ~/Desktop/$domain/users.txt
+echo ""
+echo "$green Meta Data Stage Complete!$normal"
+echo ""
 
-*) echo "$red Please Enter A Valid Option$normal"
-read enterkey;;
+## Run the WhoIs
+echo "+------------------------------------------------+"
+whois $domain > ~/Desktop/$domain/whois.txt
+echo "$yellow Running WhoIs..$normal"
+echo ""
+echo "$green WhoIs output saved to: $lcyan ~/Desktop/$domain/whois.txt$normal"
+fi
+echo ""
+## Additional Features: ##
 
-esac
-done
+## Pull domains from SSL Certificate
+echo "+------------------------------------------------+"
+echo "$yellow Pulling Domains from SSL Certificates $normal"
+echo ""
+sslscan --ssl2 $domain | grep DNS | sed 's/,/"\n"/g' | sed 's/"//g' | cut -d':' -f2 > ~/Desktop/$domain/sslcertdomains_temp.txt
+nmap -vv $domain -script=ssl-cert -p443 | grep commonName | grep -v 'Issuer' | cut -d '/' -f1 | cut -d '=' -f2 >> ~/Desktop/$domain/sslcertdomains_temp.txt
+cat ~/Desktop/$domain/sslcertdomains_temp.txt | sort -u > ~/Desktop/$domain/sslcertdomains.txt
+cat ~/Desktop/$domain/sslcertdomains.txt
+rm ~/Desktop/$domain/sslcertdomains_temp.txt
+echo ""
+echo "$green Finished Pulling Domains!$normal"
+echo ""
