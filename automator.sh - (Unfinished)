@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Work in progress. very buggy. Also possibly porting this over to Perl or Ruby. 
-
 #Automatically run recon against a domain/list of domains.
 #Built for Backtrack
 #
@@ -10,6 +8,9 @@
 # * Email Harvesting
 # * Meta Data Enumeration
 # * WhoIs
+#
+# Additional Features
+# * Pull domains from SSL Certificate
 #
 # Usage: ./automator.sh listofdomains.txt
 # Usage: ./automator.sh domain.com
@@ -57,13 +58,16 @@ echo "$blue | $yellow * WhoIs$normal                                  $blue|$nor
 echo "$blue +-------------------------------------------+$normal"
 echo ""
 mkdir -p ~/Desktop/$domain
+mkdir -p ~/Desktop/$domain/metagoofil
 sleep 1
+
+## Main Features: ##
 
 ## Run the DNS Stage
 echo "$yellow Running DNS Recon Stage..$normal"
 echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
-cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t    " $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 rm -rf /tmp/$domain.dnsrecon.txt.tmp
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
@@ -78,29 +82,48 @@ echo "$green DNS Recon Stage Complete!$normal"
 echo ""
 
 ## Run the Mail Harvesting Stage
+echo "+------------------------------------------------+"
 echo "$yellow Running Email Harvesting Stage..$normal"
 echo ""
 /pentest/enumeration/theharvester/theHarvester.py -l 500 -b all -d $domain > /tmp/$domain.emails.txt.tmp
 cat /tmp/$domain.emails.txt.tmp |  grep @ | grep -vE 'cmartore' > ~/Desktop/$domain/emails.txt
 rm -rf /tmp/$domain.emails.txt.tmp
-cat ~/Desktop/$domain/emails.txt
+echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $normal)" 
+cat ~/Desktop/$domain/emails.txt | column -c 100
 echo ""
 echo "$green Email Harvesting Stage Complete!$normal"
 echo ""
 
 ## Run the MetaGooFil Stage
+echo "+------------------------------------------------+"
 echo "$yellow Running Meta Data Gathering Stage..$normal"
 echo ""
-/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$domain/ -f ~/Desktop/$domain/users.html | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" >> ~/Desktop/$domain/users.txt
+/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$domain/metagoofil -f ~/Desktop/$domain/users.html > ~/Desktop/$domain/users_temp.html
+cat ~/Desktop/$domain/users_temp.html | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
 cat ~/Desktop/$domain/users.txt
 echo ""
 echo "$green Meta Data Stage Complete!$normal"
 echo ""
 
 ## Run the WhoIs
+echo "+------------------------------------------------+"
 whois $domain > ~/Desktop/$domain/whois.txt
 echo "$yellow Running WhoIs..$normal"
 echo ""
-echo "$green WhoIs output saved to: ~/Desktop/$domain/whois.txt$normal"
-
+echo "$green WhoIs output saved to: $lcyan ~/Desktop/$domain/whois.txt$normal"
 fi
+echo ""
+## Additional Features: ##
+
+## Pull domains from SSL Certificate
+echo "+------------------------------------------------+"
+echo "$yellow Pulling Domains from SSL Certificates $normal"
+echo ""
+sslscan --ssl2 $domain | grep DNS | sed 's/,/"\n"/g' | sed 's/"//g' | cut -d':' -f2 > ~/Desktop/$domain/sslcertdomains_temp.txt
+nmap -vv $domain -script=ssl-cert -p443 | grep commonName | grep -v 'Issuer' | cut -d '/' -f1 | cut -d '=' -f2 >> ~/Desktop/$domain/sslcertdomains_temp.txt
+cat ~/Desktop/$domain/sslcertdomains_temp.txt | sort -u > ~/Desktop/$domain/sslcertdomains.txt
+cat ~/Desktop/$domain/sslcertdomains.txt
+rm ~/Desktop/$domain/sslcertdomains_temp.txt
+echo ""
+echo "$green Finished Pulling Domains!$normal"
+echo ""
