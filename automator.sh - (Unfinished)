@@ -63,12 +63,12 @@ sleep 1
 echo "$yellow Running DNS Recon Stage..$normal"
 echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
-cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "    " $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t    " $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 rm -rf /tmp/$domain.dnsrecon.txt.tmp
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 echo "Name Servers" >> ~/Desktop/$domain/dnsrecon.txt
-dig ns $domain | grep -v '^;' | grep A | awk {'print $1 " " $5'} >> ~/Desktop/$domain/dnsrecon.txt
+dig ns $domain | grep -v '^;' | grep A | awk {'print $1 "\t" $5'} >> ~/Desktop/$domain/dnsrecon.txt
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 echo "MX Records" >> ~/Desktop/$domain/dnsrecon.txt
 dig mx $domain | grep -v '^;' | grep $domain | awk {'print $6'} >> ~/Desktop/$domain/dnsrecon.txt
