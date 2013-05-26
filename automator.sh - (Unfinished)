@@ -34,10 +34,16 @@ echo ""
 echo "Usage: ./automator.sh listofdomains.txt"
 echo "Usage: ./automator.sh domain.com"
 echo ""
+echo " --slow  -Runs a more intesnce recon. But alot slower"
+echo ""
 
 ## Run script on correct usage
 else
-domain=$1
+
+##Set Variables
+domain="$1"
+
+#Run scripts without arguments
 clear
 echo "$yellow                _                        _             "
 echo "$yellow     /\        | |                      | |            "
@@ -65,11 +71,22 @@ sleep 1
 ## Main Features: ##
 
 ## Run the DNS Stage
-echo "$yellow Running DNS Recon Stage..$normal (will currently hang if domain(s) have wildcard DNS configured)"
+if 
+[[ "$2" == "--slow" ]]
+then
+echo "$yellow Running DNS Recon Stage..$normal (slow)"
+echo ""
+
+/pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt 
+
+
+else
+echo "$yellow Running DNS Recon Stage..$normal"
 echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
 cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
-echo "" >> ~/Desktop/$domain/dnsrecon.txt
+fi
 rm -rf /tmp/$domain.dnsrecon.txt.tmp
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 echo "Name Servers" >> ~/Desktop/$domain/dnsrecon.txt
@@ -80,23 +97,23 @@ dig mx $domain | grep -v '^;' | grep $domain | awk {'print $6'} >> ~/Desktop/$do
 cat ~/Desktop/$domain/dnsrecon.txt
 echo ""
 echo "$green DNS Recon Stage Complete!$normal"
-echo ""
 
 ## Run the Mail Harvesting Stage
 echo "+------------------------------------------------+"
-echo "$yellow Running Email Harvesting Stage..$normal"
 echo ""
+echo "$yellow Running Email Harvesting Stage..$normal"
 /pentest/enumeration/theharvester/theHarvester.py -l 500 -b all -d $domain > /tmp/$domain.emails.txt.tmp
 cat /tmp/$domain.emails.txt.tmp |  grep @ | grep -vE 'cmartore' > ~/Desktop/$domain/emails.txt
 rm -rf /tmp/$domain.emails.txt.tmp
-echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $normal)" 
+echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $normal)"
+echo "" 
 cat ~/Desktop/$domain/emails.txt | column -c 100
 echo ""
 echo "$green Email Harvesting Stage Complete!$normal"
-echo ""
 
 ## Run the MetaGooFil Stage
 echo "+------------------------------------------------+"
+echo ""
 echo "$yellow Running Meta Data Gathering Stage..$normal"
 echo ""
 /pentest/enumeration/google/metagoofil/metagoofil.py -d $domain  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$domain/metagoofil -f ~/Desktop/$domain/users.html > ~/Desktop/$domain/users_temp.html
@@ -112,12 +129,11 @@ whois $domain > ~/Desktop/$domain/whois.txt
 echo "$yellow Running WhoIs..$normal"
 echo ""
 echo "$green WhoIs output saved to: $lcyan ~/Desktop/$domain/whois.txt$normal"
-fi
-echo ""
 ## Additional Features: ##
 
 ## Pull domains from SSL Certificate
 echo "+------------------------------------------------+"
+echo ""
 echo "$yellow Pulling Domains from SSL Certificates $normal"
 echo ""
 sslscan --ssl2 $domain | grep DNS | sed 's/,/"\n"/g' | sed 's/"//g' | cut -d':' -f2 > ~/Desktop/$domain/sslcertdomains_temp.txt
@@ -128,3 +144,7 @@ rm ~/Desktop/$domain/sslcertdomains_temp.txt
 echo ""
 echo "$green Finished Pulling Domains!$normal"
 echo ""
+
+
+
+fi
