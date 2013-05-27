@@ -105,7 +105,7 @@ echo "$yellow Running Email Harvesting Stage..$normal"
 /pentest/enumeration/theharvester/theHarvester.py -l 500 -b all -d $domain > /tmp/$domain.emails.txt.tmp
 cat /tmp/$domain.emails.txt.tmp |  grep @ | grep -vE 'cmartore' > ~/Desktop/$domain/emails.txt
 rm -rf /tmp/$domain.emails.txt.tmp
-echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $normal)"
+echo "$lcyan Email Addresses Found: ($yellow `cat ~/Desktop/$domain/emails.txt | wc -l` $lcyan)$normal"
 echo "" 
 cat ~/Desktop/$domain/emails.txt | column -c 100
 echo ""
@@ -116,15 +116,16 @@ echo "+------------------------------------------------+"
 echo ""
 echo "$yellow Running Meta Data Gathering Stage..$normal"
 echo ""
-/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain  -t doc,xls,docx -l 200 -n 50 -o ~/Desktop/$domain/metagoofil -f ~/Desktop/$domain/users.html > ~/Desktop/$domain/users_temp.html
-cat ~/Desktop/$domain/users_temp.html | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
+/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain -t pdf,doc,xls,ppt,odp,ods,docx,xlsx,pptx -l 200 -n 50  -o ~/Desktop/$domain/metagoofil/ -f ~/Desktop/$domain/users_temp.txt
+cat ~/Desktop/$domain/users_temp.txt | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
+echo "$lcyan Users found: ($yellow `cat cat ~/Desktop/$domain/users.txt | wc -l` $lcyan)$normal"
 cat ~/Desktop/$domain/users.txt
 echo ""
 echo "$green Meta Data Stage Complete!$normal"
-echo ""
 
 ## Run the WhoIs
 echo "+------------------------------------------------+"
+echo ""
 whois $domain > ~/Desktop/$domain/whois.txt
 echo "$yellow Running WhoIs..$normal"
 echo ""
