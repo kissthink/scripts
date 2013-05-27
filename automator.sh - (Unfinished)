@@ -42,6 +42,13 @@ else
 
 ##Set Variables
 domain="$1"
+if 
+[[ "$@" == "--output=" ]]
+then
+output_dir="~/Desktop"
+else
+output_dir="~/Desktop"
+fi
 
 #Run scripts without arguments
 clear
@@ -72,20 +79,37 @@ sleep 1
 
 ## Run the DNS Stage
 if 
-[[ "$2" == "--slow" ]]
+[[ "$@" == "--slow" ]]
 then
 echo "$yellow Running DNS Recon Stage..$normal (slow)"
 echo ""
-
+if 
+dig @`dig ns $domain | grep -v '^;' | grep A | cut -f1 | head -1` $domain axfr | grep "XFR size"
+then
+echo "$lcyan Zone Transfer Vulnerability: ($red Yes $lcyan)$normal"
+else
+echo "$lcyan Zone Transfer Vulnerability: ($green No $lcyan)$normal"
+fi
+echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
 cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt 
-
-
+echo "$lcyan Subdomains found: ($yellow `cat cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
+echo ""
 else
 echo "$yellow Running DNS Recon Stage..$normal"
 echo ""
+if 
+dig @`dig ns $domain | grep -v '^;' | grep A | cut -f1 | head -1` $domain axfr | grep "XFR size" > /dev/null
+then
+echo "$lcyan Zone Transfer Vulnerability: ($red Yes $lcyan)$normal"
+else
+echo "$lcyan Zone Transfer Vulnerability: ($green No $lcyan)$normal"
+fi
+echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
-cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|spf1|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  | grep $domain > ~/Desktop/$domain/dnsrecon.txt
+echo "$lcyan Subdomains found: ($yellow `cat cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
+echo ""
 fi
 rm -rf /tmp/$domain.dnsrecon.txt.tmp
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
@@ -116,9 +140,10 @@ echo "+------------------------------------------------+"
 echo ""
 echo "$yellow Running Meta Data Gathering Stage..$normal"
 echo ""
-/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain -t pdf,doc,xls,ppt,odp,ods,docx,xlsx,pptx -l 200 -n 50  -o ~/Desktop/$domain/metagoofil/ -f ~/Desktop/$domain/users_temp.txt
+/pentest/enumeration/google/metagoofil/metagoofil.py -d $domain -t pdf,doc,xls,ppt,odp,ods,docx,xlsx,pptx -l 20 -n 20  -o ~/Desktop/$domain/metagoofil/ -f ~/Desktop/$domain/users_temp.txt > /dev/null
 cat ~/Desktop/$domain/users_temp.txt | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
 echo "$lcyan Users found: ($yellow `cat cat ~/Desktop/$domain/users.txt | wc -l` $lcyan)$normal"
+echo ""
 cat ~/Desktop/$domain/users.txt
 echo ""
 echo "$green Meta Data Stage Complete!$normal"
