@@ -70,6 +70,7 @@ echo "$blue |                                           |"
 echo "$blue | $red Additional Features            $normal         $blue |$normal"
 echo "$blue | $yellow * Pull domains From SSL Cert$normal$blue             |$normal"
 echo "$blue +-------------------------------------------+$normal"
+echo "$lcyan Target = '$green$domain$lcyan'"
 echo ""
 mkdir -p ~/Desktop/$domain
 mkdir -p ~/Desktop/$domain/metagoofil
@@ -92,14 +93,14 @@ echo "$lcyan Zone Transfer Vulnerability: ($green No $lcyan)$normal"
 fi
 echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
-cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  > ~/Desktop/$domain/dnsrecon.txt 
-echo "$lcyan Subdomains found: ($yellow `cat cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|MX|NS|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  | sed '/^$/d' > ~/Desktop/$domain/dnsrecon.txt 
+echo "$lcyan Subdomains found: ($yellow `cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
 echo ""
 else
 echo "$yellow Running DNS Recon Stage..$normal"
 echo ""
 if 
-dig @`dig ns $domain | grep -v '^;' | grep A | cut -f1 | head -1` $domain axfr | grep "XFR size" > /dev/null
+dig @`dig ns $domain | grep -v '^;' | grep A | cut -f1 | head -1` $domain axfr | grep "XFR size"
 then
 echo "$lcyan Zone Transfer Vulnerability: ($red Yes $lcyan)$normal"
 else
@@ -107,17 +108,17 @@ echo "$lcyan Zone Transfer Vulnerability: ($green No $lcyan)$normal"
 fi
 echo ""
 /pentest/enumeration/dns/dnsrecon/dnsrecon.py -t brt,std,axfr -D /pentest/enumeration/dns/dnsrecon/namelist.txt -d $domain > /tmp/$domain.dnsrecon.txt.tmp
-cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|spf1|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  | grep $domain > ~/Desktop/$domain/dnsrecon.txt
-echo "$lcyan Subdomains found: ($yellow `cat cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
+cat /tmp/$domain.dnsrecon.txt.tmp | grep '[^\.][0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}[^\.]' | grep -vE 'Trying|TCP|spf1|SOA|Has' | awk {'print $3 "\t" $4'} | sort -u  | grep $domain | sed '/^$/d' > ~/Desktop/$domain/dnsrecon.txt
+echo "$lcyan Subdomains found: ($yellow `cat ~/Desktop/$domain/dnsrecon.txt | wc -l` $lcyan)$normal"
 echo ""
 fi
 rm -rf /tmp/$domain.dnsrecon.txt.tmp
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 echo "Name Servers" >> ~/Desktop/$domain/dnsrecon.txt
-dig ns $domain | grep -v '^;' | grep A | awk {'print $1 "\t" $5'} >> ~/Desktop/$domain/dnsrecon.txt
+dig ns $domain | grep -v '^;' | grep A | awk {'print $1 "\t" $5'} | sed '/^$/d' >> ~/Desktop/$domain/dnsrecon.txt
 echo "" >> ~/Desktop/$domain/dnsrecon.txt
 echo "MX Records" >> ~/Desktop/$domain/dnsrecon.txt
-dig mx $domain | grep -v '^;' | grep $domain | awk {'print $6'} >> ~/Desktop/$domain/dnsrecon.txt
+dig mx $domain | grep -v '^;' | grep $domain | awk {'print $6'} | sed '/^$/d' >> ~/Desktop/$domain/dnsrecon.txt
 cat ~/Desktop/$domain/dnsrecon.txt
 echo ""
 echo "$green DNS Recon Stage Complete!$normal"
@@ -142,7 +143,7 @@ echo "$yellow Running Meta Data Gathering Stage..$normal"
 echo ""
 /pentest/enumeration/google/metagoofil/metagoofil.py -d $domain -t pdf,doc,xls,ppt,odp,ods,docx,xlsx,pptx -l 20 -n 20  -o ~/Desktop/$domain/metagoofil/ -f ~/Desktop/$domain/users_temp.txt > /dev/null
 cat ~/Desktop/$domain/users_temp.txt | sed 's/useritem/\n/g' | grep '">' | grep -vE 'head' | awk -F "<" {'print $1'} | cut -d">" -f2 | sed -e "s/^ \{1,\}//" > ~/Desktop/$domain/users.txt
-echo "$lcyan Users found: ($yellow `cat cat ~/Desktop/$domain/users.txt | wc -l` $lcyan)$normal"
+echo "$lcyan Users found: ($yellow `cat ~/Desktop/$domain/users.txt | wc -l` $lcyan)$normal"
 echo ""
 cat ~/Desktop/$domain/users.txt
 echo ""
