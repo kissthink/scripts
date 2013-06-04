@@ -12,7 +12,7 @@
 # Additional Features
 # * Pull domains from SSL Certificate
 #
-# Usage: ./automator.sh
+# Usage: ./automator.sh domainlist.txt
 # Usage: ./automator.sh domain.com
 #
 # By: Leon Teale (RandomStorm)
