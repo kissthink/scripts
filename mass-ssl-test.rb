@@ -23,7 +23,7 @@ if file = ARGV[0]
       rows     = []
       targets  = File.readlines(file)
       headings = ['Target', 'CN', 'SSLv2', 'Ciphers Strength (min - achievable)', 'BEAST', 'CRIME', 'RC4']
-      bar      = ProgressBar.create(format: '%a <%B> (%c / %C) %P%% %e', total: targets.size)
+      bar      = ProgressBar.create(:format => '%a <%B> (%c / %C) %P%% %e', :total => targets.size)
       
       targets.each do |target|
         target.chomp!
