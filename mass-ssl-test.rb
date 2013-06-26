@@ -12,9 +12,10 @@ beast = %r{BEAST status: vulnerable}i
 crime = %r{CRIME status: vulnerable}i
 sslv2 = %r{SSLv2}
 rc4   = %r{RC4_}
-cn    = %r{CN=([^,]+)}
+cn    = %r{CN=([^,\n]+)}
 ciphers_min = %r{Minimal encryption strength: [^\(]+\(([^\)]+)\)}
 ciphers_max = %r{Achievable encryption strength: [^\(]+\(([^\)]+)\)}
+no_ssl_tls = %r{No SSL/TLS server at}i
 
 if file = ARGV[0]
   if File.exists?(ssl_test_bin)
@@ -30,15 +31,15 @@ if file = ARGV[0]
         row     = [target]
         command = %x{java -jar #{ssl_test_bin} #{target}}
 
-        if cn_value = command[cn, 1] 
-          row << cn_value
+        if command.match(no_ssl_tls)
+          row << { :value => 'Error: ' + command, :colspan => 6 }
+        else
+          row << command[cn, 1]
           row << (command.match(sslv2) ? 'Yes' : 'No')
           row << (command[ciphers_min, 1] + ' - ' + command[ciphers_max, 1])
           row << (command.match(beast) ? 'Yes' : 'No')
           row << (command.match(crime) ? 'Yes' : 'No')
           row << (command.match(rc4) ? 'Yes' : 'No')
-        else
-          row << { :value => 'Error: ' + command, :colspan => 6 }
         end
 
         rows << row
