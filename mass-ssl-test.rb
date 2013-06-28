@@ -7,7 +7,7 @@
 require 'terminal-table'
 require 'ruby-progressbar'
 
-ssl_test_bin = File.expand_path(File.dirname(__FILE__) + '/' + (ARGV[1] || 'SSLTest.jar'))
+ssl_test_bin =  ARGV[1] || File.expand_path(File.dirname(__FILE__) + '/SSLTest.jar')
 beast = %r{BEAST status: vulnerable}i
 crime = %r{CRIME status: vulnerable}i
 sslv2 = %r{SSLv2}
