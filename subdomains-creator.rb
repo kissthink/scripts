@@ -9,7 +9,7 @@ if domains_file = ARGV[0] and subdomains_file = ARGV[1]
   subdomains = File.readlines(subdomains_file)
 
   subdomains.sort.each do |subdomain|
-  	domains.each do |domain|
+    domains.each do |domain|
       puts "#{subdomain.chomp}.#{domain.chomp}"
     end
   end
