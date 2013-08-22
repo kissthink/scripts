@@ -7,15 +7,20 @@
 # By: Ryan Dewhurst (RandomStorm)
 #
 
+require 'socket'
+
 if file = ARGV[0]
   domains = File.open(file)
 
   domains.each do |domain|
     domain.chop!
-    ping = `ping -c 1 #{domain}`
-    ip   = ping[/\((.+)\):/, 1]
 
-    puts "#{domain} #{ip}"
+    begin
+      ip = IPSocket::getaddress(domain)
+      puts "#{domain} #{IPSocket::getaddress(domain)}"
+    rescue
+      puts "#{domain} N/A"
+     end
   end
 else
   puts "Usage: ./domain_to_ip.rb urls.txt"
