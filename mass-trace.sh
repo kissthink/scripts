@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 #
 # This script takes the urls.txt file from the same directory and performs a TRACE request on each of the URLs.
